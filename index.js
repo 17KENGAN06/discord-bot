@@ -10,8 +10,8 @@ const client = new Client({
 const FILE = './birthdays.json';
 
 // 👉 ТВОИ ID
-const CHANNEL_ID = '1469998226911395950';
-const ROLE_ID = '1488436026815942676';
+const CHANNEL_ID = '1483135445884997765';
+const ROLE_ID = '1316124528639742066';
 const OWNER_ID = '382985119159418902';
 
 // загрузка

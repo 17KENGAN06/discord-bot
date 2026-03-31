@@ -1,7 +1,15 @@
-const { REST, Routes } = require('discord.js');
+client.once('ready', async () => {
+  console.log(`🤖 Бот запущен как ${client.user.tag}`);
 
-const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+  const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
-await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] });
+  const commands = [new SlashCommandBuilder().setName('test123').setDescription('test')].map((c) =>
+    c.toJSON()
+  );
 
-console.log('🧹 Все команды удалены');
+  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+
+  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+
+  console.log('✅ команды отправлены');
+});

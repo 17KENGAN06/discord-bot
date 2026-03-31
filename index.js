@@ -30,7 +30,7 @@ function saveData(data) {
   fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
 }
 
-// нормализация даты (исправленная)
+// нормализация даты
 function normalizeDate(date) {
   const [d, m] = date.replace('.', '-').split('-');
   return `${d.padStart(2, '0')}-${m.padStart(2, '0')}`;
@@ -86,7 +86,6 @@ async function checkBirthdaysFull() {
       const userDate = normalizeDate(user.date);
 
       if (userDate === todayStr) {
-        // выдаём роль если нет
         if (!member.roles.cache.has(ROLE_ID)) {
           await member.roles.add(ROLE_ID);
         }
@@ -199,12 +198,16 @@ client.on('interactionCreate', async (interaction) => {
 
   // 🧹 reset-json
   if (interaction.commandName === 'reset-json') {
+    await interaction.deferReply({ ephemeral: true });
+
     if (interaction.user.id !== OWNER_ID) {
-      return interaction.reply({ content: '🚫 Нет доступа', ephemeral: true });
+      return interaction.editReply('🚫 Нет доступа');
     }
 
     saveData([]);
-    return interaction.reply('✅ JSON очищен');
+    console.log('JSON очищен через команду');
+
+    return interaction.editReply('✅ JSON очищен');
   }
 });
 

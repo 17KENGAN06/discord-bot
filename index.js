@@ -211,10 +211,16 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-// 🔥 cron (Москва)
-cron.schedule('0 9 * * *', async () => {
-  await checkBirthdaysFull();
-});
+// 🔥 cron каждые 5 минут (Москва)
+cron.schedule(
+  '*/5 * * * *',
+  async () => {
+    await checkBirthdaysFull();
+  },
+  {
+    timezone: 'Europe/Moscow',
+  }
+);
 
 // 🔥 запуск
 client.once('ready', async () => {

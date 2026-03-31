@@ -30,9 +30,10 @@ function saveData(data) {
   fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
 }
 
-// нормализация даты
+// нормализация даты (исправленная)
 function normalizeDate(date) {
-  return date.replace('.', '-');
+  const [d, m] = date.replace('.', '-').split('-');
+  return `${d.padStart(2, '0')}-${m.padStart(2, '0')}`;
 }
 
 // проверка Steam
@@ -79,30 +80,39 @@ async function checkBirthdaysFull() {
 
   for (const user of data) {
     try {
+      if (!user.userId || !user.date) continue;
+
       const member = await channel.guild.members.fetch(user.userId);
       const userDate = normalizeDate(user.date);
 
       if (userDate === todayStr) {
+        // выдаём роль если нет
         if (!member.roles.cache.has(ROLE_ID)) {
           await member.roles.add(ROLE_ID);
-
-          let message = `⏰ Сейчас по Москве ${moscowTime}\n🎉 ${member}, у тебя сегодня день рождения! Поздравляем! 🎂\n`;
-
-          if (user.steam) {
-            message += `🎁 Вот ссылочка на Steam именинника: ${user.steam}\nМожете порадовать подарком именинника 😉`;
-          } else {
-            message += `😢 Именинник не указал, к сожалению, ссылку на свой Steam`;
-          }
-
-          await channel.send(message);
         }
+
+        // защита от дублей
+        if (user.lastCongratulated === todayStr) continue;
+
+        let message = `⏰ Сейчас по Москве ${moscowTime}\n🎉 ${member}, у тебя сегодня день рождения! Поздравляем! 🎂\n`;
+
+        if (user.steam) {
+          message += `🎁 Вот ссылочка на Steam именинника: ${user.steam}\nМожете порадовать подарком именинника 😉`;
+        } else {
+          message += `😢 Именинник не указал, к сожалению, ссылку на свой Steam`;
+        }
+
+        await channel.send(message);
+
+        user.lastCongratulated = todayStr;
+        saveData(data);
       } else {
         if (member.roles.cache.has(ROLE_ID)) {
           await member.roles.remove(ROLE_ID);
         }
       }
     } catch (e) {
-      console.log('Ошибка:', e);
+      console.log(`Ошибка с пользователем ${user.userId}:`, e.message);
     }
   }
 }
@@ -167,32 +177,38 @@ client.on('interactionCreate', async (interaction) => {
     let data = loadData();
     const user = data.find((u) => u.userId === targetUser.id);
 
-    // ❌ нет в списке
     if (!user) {
       return interaction.editReply('🚫 Пользователь не найден в списке именинников.');
     }
 
-    // ❌ не админ и не сам
     if (interaction.user.id !== OWNER_ID && interaction.user.id !== targetUser.id) {
       return interaction.editReply('🚫 Ты можешь привязать Steam только себе.');
     }
 
-    // ❌ плохая ссылка
     if (!isValidSteamLink(link)) {
       return interaction.editReply(
         '❌ Неверная ссылка на Steam.\nПример: https://steamcommunity.com/id/yourname'
       );
     }
 
-    // ✅ сохраняем
     user.steam = link;
     saveData(data);
 
     await interaction.editReply(`✅ Steam привязан для ${targetUser}`);
   }
+
+  // 🧹 reset-json
+  if (interaction.commandName === 'reset-json') {
+    if (interaction.user.id !== OWNER_ID) {
+      return interaction.reply({ content: '🚫 Нет доступа', ephemeral: true });
+    }
+
+    saveData([]);
+    return interaction.reply('✅ JSON очищен');
+  }
 });
 
-// 🔥 cron
+// 🔥 cron (Москва)
 cron.schedule('0 9 * * *', async () => {
   await checkBirthdaysFull();
 });

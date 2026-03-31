@@ -1,6 +1,8 @@
 require('dotenv').config();
 const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
+const CLIENT_ID = '1488426543389610057';
+
 const commands = [
   // 🎂 Установка даты
   new SlashCommandBuilder()
@@ -20,13 +22,17 @@ const commands = [
   new SlashCommandBuilder()
     .setName('connect-steam')
     .setDescription('Привязать Steam аккаунт')
-    .addStringOption(
-      (option) => option.setName('link').setDescription('Ссылка на Steam профиль').setRequired(true) // ✅ сначала обязательный
+    .addStringOption((option) =>
+      option.setName('link').setDescription('Ссылка на Steam профиль').setRequired(true)
     )
-    .addUserOption(
-      (option) =>
-        option.setName('user').setDescription('Кому привязать (если ты админ)').setRequired(false) // ✅ потом необязательный
+    .addUserOption((option) =>
+      option.setName('user').setDescription('Кому привязать (если ты админ)').setRequired(false)
     ),
+
+  // 🧹 reset-json
+  new SlashCommandBuilder()
+    .setName('reset-json')
+    .setDescription('Очистить JSON (только для админа)'),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
@@ -35,10 +41,13 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
   try {
     console.log('🚀 Регистрирую команды...');
 
-    await rest.put(Routes.applicationCommands('1488426543389610057'), { body: commands });
+    await rest.put(
+      Routes.applicationCommands(CLIENT_ID), // глобальные команды
+      { body: commands }
+    );
 
     console.log('✅ Команды зарегистрированы');
   } catch (error) {
-    console.error(error);
+    console.error('❌ Ошибка регистрации:', error);
   }
 })();

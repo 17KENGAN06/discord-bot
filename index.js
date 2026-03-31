@@ -13,17 +13,14 @@ const FILE = './birthdays.json';
 const CHANNEL_ID = '1469998226911395950';
 const ROLE_ID = '1488436026815942676';
 const OWNER_ID = '382985119159418902';
-
 const CLIENT_ID = '1488426543389610057';
-const GUILD_ID = '1469998225812357154';
 
 // загрузка
 function loadData() {
   try {
     if (!fs.existsSync(FILE)) return [];
     return JSON.parse(fs.readFileSync(FILE, 'utf8'));
-  } catch (e) {
-    console.log('Ошибка JSON:', e);
+  } catch {
     return [];
   }
 }
@@ -102,7 +99,6 @@ async function checkBirthdaysFull() {
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  // birthday
   if (interaction.commandName === 'birthday') {
     await interaction.deferReply({ ephemeral: true });
 
@@ -126,7 +122,6 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.editReply(`✅ ${targetUser} → ${date}`);
   }
 
-  // список
   if (interaction.commandName === 'birth-list') {
     const data = loadData();
 
@@ -136,7 +131,6 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.reply(`🎂 Список:\n${text}`);
   }
 
-  // steam
   if (interaction.commandName === 'connect-steam') {
     await interaction.deferReply({ ephemeral: true });
 
@@ -162,7 +156,7 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-// 🔥 CRON (Москва)
+// 🔥 CRON
 cron.schedule(
   '0 9 * * *',
   async () => {
@@ -173,11 +167,10 @@ cron.schedule(
   }
 );
 
-// 🚀 запуск
+// 🚀 запуск + деплой ГЛОБАЛЬНЫХ команд
 client.once('ready', async () => {
   console.log(`🤖 Бот запущен как ${client.user.tag}`);
 
-  // 🔥 деплой команд
   const commands = [
     new SlashCommandBuilder()
       .setName('birthday')
@@ -197,8 +190,11 @@ client.once('ready', async () => {
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
   try {
-    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
-    console.log('✅ Slash команды загружены');
+    await rest.put(
+      Routes.applicationCommands(CLIENT_ID), // 🔥 ГЛОБАЛЬНЫЕ КОМАНДЫ
+      { body: commands }
+    );
+    console.log('✅ Глобальные команды загружены (ждать до 1 часа)');
   } catch (err) {
     console.error(err);
   }

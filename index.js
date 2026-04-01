@@ -96,7 +96,7 @@ async function checkBirthdaysFull() {
         let message = `⏰ Сейчас по Москве ${moscowTime}\n🎉 ${member}, у тебя сегодня день рождения! Поздравляем! 🎂\n`;
 
         if (user.steam) {
-          message += `🎁 Вот ссылочка на Steam именинника: ${user.steam}\nМожете порадовать подарком именинника 😉`;
+          message += `Steam именинника: ${user.steam}\nМожете порадовать подарком`;
         } else {
           message += `😢 Именинник не указал, к сожалению, ссылку на свой Steam`;
         }

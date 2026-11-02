@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, MessageFlags } = require('discord.js');
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
@@ -160,7 +160,7 @@ client.on('interactionCreate', async (interaction) => {
 
   // 🎂 birthday
   if (interaction.commandName === 'birthday') {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     if (interaction.user.id !== OWNER_ID) {
       return interaction.editReply('🚫 Команда закрыта.\nОбратись к @17kengan06.');
@@ -210,7 +210,7 @@ client.on('interactionCreate', async (interaction) => {
 
   // 🎮 connect-steam
   if (interaction.commandName === 'connect-steam') {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const link = interaction.options.getString('link');
     const targetUser = interaction.options.getUser('user') || interaction.user;
@@ -240,7 +240,7 @@ client.on('interactionCreate', async (interaction) => {
 
   // 🧹 reset-json
   if (interaction.commandName === 'reset-json') {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     if (interaction.user.id !== OWNER_ID) {
       return interaction.editReply('🚫 Нет доступа');

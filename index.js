@@ -2,12 +2,23 @@ require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
 const cron = require('node-cron');
 const fs = require('fs');
+const path = require('path');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-const FILE = './birthdays.json';
+// 💾 Где хранить данные.
+// На Railway файловая система контейнера стирается при каждом деплое/рестарте,
+// поэтому файл должен лежать на подключённом Volume (Railway сам задаёт
+// RAILWAY_VOLUME_MOUNT_PATH). Можно переопределить через DATA_DIR.
+const DATA_DIR = process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
+const FILE = path.join(DATA_DIR, 'birthdays.json');
+
+if (!process.env.DATA_DIR && !process.env.RAILWAY_VOLUME_MOUNT_PATH && process.env.RAILWAY_ENVIRONMENT) {
+  console.warn('⚠️ Volume не подключён! Дни рождения сотрутся при следующем деплое/рестарте.');
+}
+console.log(`💾 Файл данных: ${FILE}`);
 
 // 👉 ТВОИ ID
 const CHANNEL_ID = '1022763494686330940';
@@ -27,13 +38,22 @@ function loadData() {
 
 // сохранение
 function saveData(data) {
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  // пишем во временный файл и переименовываем, чтобы не получить битый JSON при падении
+  const tmp = `${FILE}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  fs.renameSync(tmp, FILE);
 }
 
 // нормализация даты
+// принимает ДД-ММ, ДД.ММ, ДД/ММ, а также с годом (ДД.ММ.ГГГГ)
 function normalizeDate(date) {
-  const [d, m] = date.replace('.', '-').split('-');
-  return `${d.padStart(2, '0')}-${m.padStart(2, '0')}`;
+  const m = String(date).trim().match(/^(\d{1,2})[.\-\/](\d{1,2})/);
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  if (day < 1 || day > 31 || month < 1 || month > 12) return null;
+  return `${String(day).padStart(2, '0')}-${String(month).padStart(2, '0')}`;
 }
 
 // проверка Steam
@@ -76,7 +96,13 @@ async function checkBirthdaysFull() {
 
   const todayStr = `${day}-${month}`;
 
-  const channel = await client.channels.fetch(CHANNEL_ID);
+  let channel;
+  try {
+    channel = await client.channels.fetch(CHANNEL_ID);
+  } catch (e) {
+    console.log('Не могу получить канал для поздравлений:', e.message);
+    return;
+  }
 
   for (const user of data) {
     try {
@@ -129,7 +155,11 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     const targetUser = interaction.options.getUser('user');
-    const date = interaction.options.getString('date');
+    const date = normalizeDate(interaction.options.getString('date'));
+
+    if (!date) {
+      return interaction.editReply('❌ Неверная дата. Формат: ДД-ММ или ДД.ММ (например 05.03)');
+    }
 
     let data = loadData();
     const existing = data.find((u) => u.userId === targetUser.id);
@@ -215,7 +245,11 @@ client.on('interactionCreate', async (interaction) => {
 cron.schedule(
   '*/5 * * * *',
   async () => {
-    await checkBirthdaysFull();
+    try {
+      await checkBirthdaysFull();
+    } catch (e) {
+      console.log('Ошибка проверки ДР:', e);
+    }
   },
   {
     timezone: 'Europe/Moscow',

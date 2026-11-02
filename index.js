@@ -133,13 +133,8 @@ async function checkBirthdaysFull() {
 
         const embed = new EmbedBuilder()
           .setColor(0xff4fa3)
-          .setAuthor({ name: '🎉 Праздник на сервере!' })
-          .setTitle(`С днём рождения, ${member.displayName}! 🎂`)
-          .setDescription(
-            `Сегодня особенный день — ${member} празднует свой день рождения!\n\n` +
-              '🥳 Желаем счастья, удачи, крутых каток и чтобы всё задуманное сбывалось!\n\n' +
-              '💬 Не забудьте поздравить именинника в чате 🎁'
-          )
+          .setTitle('🎂 День рождения')
+          .setDescription(`Сегодня день рождения у ${member}!`)
           .setThumbnail(member.displayAvatarURL({ size: 256 }))
           .setFooter({ text: channel.guild.name, iconURL: channel.guild.iconURL() ?? undefined })
           .setTimestamp();

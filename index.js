@@ -271,6 +271,9 @@ cron.schedule(
 // 🔥 запуск
 client.once('clientReady', async () => {
   console.log(`🤖 Бот запущен как ${client.user.tag}`);
+  const saved = loadData();
+  console.log(`📋 В списке ДР: ${saved.length}`);
+  for (const u of saved) console.log(`   ${u.userId} → ${u.date}${u.steam ? ' (steam)' : ''}`);
   await checkBirthdaysFull();
 });
 

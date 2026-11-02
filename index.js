@@ -25,6 +25,18 @@ const CHANNEL_ID = '1022763494686330940';
 const ROLE_ID = '1488529432757932102';
 const OWNER_ID = '382985119159418902';
 
+// первый запуск на пустом Volume — начальный список из переменной BIRTHDAYS_SEED (JSON)
+if (!fs.existsSync(FILE) && process.env.BIRTHDAYS_SEED) {
+  try {
+    const seed = JSON.parse(process.env.BIRTHDAYS_SEED);
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(FILE, JSON.stringify(seed, null, 2));
+    console.log(`🌱 Список ДР загружен из BIRTHDAYS_SEED: ${seed.length} записей`);
+  } catch (e) {
+    console.log('Ошибка BIRTHDAYS_SEED:', e.message);
+  }
+}
+
 // загрузка
 function loadData() {
   try {

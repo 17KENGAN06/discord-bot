@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, MessageFlags } = require('discord.js');
+const { Client, GatewayIntentBits, MessageFlags, EmbedBuilder } = require('discord.js');
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
@@ -90,12 +90,6 @@ async function checkBirthdaysFull() {
   const data = loadData();
   const now = new Date();
 
-  const moscowTime = new Intl.DateTimeFormat('ru-RU', {
-    timeZone: 'Europe/Moscow',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(now);
-
   const day = new Intl.DateTimeFormat('ru-RU', {
     timeZone: 'Europe/Moscow',
     day: '2-digit',
@@ -104,6 +98,11 @@ async function checkBirthdaysFull() {
   const month = new Intl.DateTimeFormat('ru-RU', {
     timeZone: 'Europe/Moscow',
     month: '2-digit',
+  }).format(now);
+
+  const year = new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
   }).format(now);
 
   const todayStr = `${day}-${month}`;
@@ -128,20 +127,26 @@ async function checkBirthdaysFull() {
           await member.roles.add(ROLE_ID);
         }
 
-        // защита от дублей
-        if (user.lastCongratulated === todayStr) continue;
+        // защита от дублей (с годом, чтобы через год поздравить снова)
+        const congratKey = `${todayStr}-${year}`;
+        if (user.lastCongratulated === congratKey) continue;
 
-        let message = `⏰ Сейчас по Москве ${moscowTime}\n🎉 ${member}, у тебя сегодня день рождения! Поздравляем! 🎂\n`;
+        const embed = new EmbedBuilder()
+          .setColor(0xff4fa3)
+          .setAuthor({ name: '🎉 Праздник на сервере!' })
+          .setTitle(`С днём рождения, ${member.displayName}! 🎂`)
+          .setDescription(
+            `Сегодня особенный день — ${member} празднует свой день рождения!\n\n` +
+              '🥳 Желаем счастья, удачи, крутых каток и чтобы всё задуманное сбывалось!\n\n' +
+              '💬 Не забудьте поздравить именинника в чате 🎁'
+          )
+          .setThumbnail(member.displayAvatarURL({ size: 256 }))
+          .setFooter({ text: channel.guild.name, iconURL: channel.guild.iconURL() ?? undefined })
+          .setTimestamp();
 
-        if (user.steam) {
-          message += `Steam именинника: ${user.steam}\nМожете порадовать подарком`;
-        } else {
-          message += `😢 Именинник не указал, к сожалению, ссылку на свой Steam`;
-        }
+        await channel.send({ content: `🎈 ${member}`, embeds: [embed] });
 
-        await channel.send(message);
-
-        user.lastCongratulated = todayStr;
+        user.lastCongratulated = congratKey;
         saveData(data);
       } else {
         if (member.roles.cache.has(ROLE_ID)) {

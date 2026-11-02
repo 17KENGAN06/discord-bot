@@ -68,23 +68,6 @@ function normalizeDate(date) {
   return `${String(day).padStart(2, '0')}-${String(month).padStart(2, '0')}`;
 }
 
-// проверка Steam
-function isValidSteamLink(link) {
-  try {
-    const url = new URL(link);
-
-    if (url.hostname !== 'steamcommunity.com') return false;
-
-    if (url.pathname.startsWith('/id/') || url.pathname.startsWith('/profiles/')) {
-      return true;
-    }
-
-    return false;
-  } catch {
-    return false;
-  }
-}
-
 // 🔥 проверка ДР
 async function checkBirthdaysFull() {
   const data = loadData();
@@ -208,36 +191,6 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.reply(text);
   }
 
-  // 🎮 connect-steam
-  if (interaction.commandName === 'connect-steam') {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-    const link = interaction.options.getString('link');
-    const targetUser = interaction.options.getUser('user') || interaction.user;
-
-    let data = loadData();
-    const user = data.find((u) => u.userId === targetUser.id);
-
-    if (!user) {
-      return interaction.editReply('🚫 Пользователь не найден в списке именинников.');
-    }
-
-    if (interaction.user.id !== OWNER_ID && interaction.user.id !== targetUser.id) {
-      return interaction.editReply('🚫 Ты можешь привязать Steam только себе.');
-    }
-
-    if (!isValidSteamLink(link)) {
-      return interaction.editReply(
-        '❌ Неверная ссылка на Steam.\nПример: https://steamcommunity.com/id/yourname'
-      );
-    }
-
-    user.steam = link;
-    saveData(data);
-
-    await interaction.editReply(`✅ Steam привязан для ${targetUser}`);
-  }
-
   // 🧹 reset-json
   if (interaction.commandName === 'reset-json') {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -273,7 +226,7 @@ client.once('clientReady', async () => {
   console.log(`🤖 Бот запущен как ${client.user.tag}`);
   const saved = loadData();
   console.log(`📋 В списке ДР: ${saved.length}`);
-  for (const u of saved) console.log(`   ${u.userId} → ${u.date}${u.steam ? ' (steam)' : ''}`);
+  for (const u of saved) console.log(`   ${u.userId} → ${u.date}`);
   await checkBirthdaysFull();
 });
 

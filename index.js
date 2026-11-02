@@ -269,9 +269,19 @@ cron.schedule(
 );
 
 // 🔥 запуск
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log(`🤖 Бот запущен как ${client.user.tag}`);
   await checkBirthdaysFull();
 });
+
+// Railway при каждом деплое останавливает старый контейнер через SIGTERM —
+// выходим чисто, иначе npm пишет ошибку и Railway считает это крашем
+for (const sig of ['SIGTERM', 'SIGINT']) {
+  process.on(sig, async () => {
+    console.log(`🛑 ${sig}, выключаюсь`);
+    await client.destroy();
+    process.exit(0);
+  });
+}
 
 client.login(process.env.TOKEN);
